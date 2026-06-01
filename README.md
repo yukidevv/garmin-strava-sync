@@ -1,5 +1,5 @@
 # garmin-strava-sync
-garminのアクティビティとstravaのアクティビティを同期させるツール
+garminのアクティビティとstravaのアクティビティを同期させるツール<br>
 非常に無意味な私だけのツール
 
 ## 概要
