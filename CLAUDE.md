@@ -3,14 +3,17 @@
 Garminのランアクティビティ（タイトル・詳細）の変更を検知し、対応するStravaアクティビティへ反映する個人用ツール。Garminを正とする一方向同期。
 
 ## 全体構成
-全てDocker(compose)に内包し、サーバで `docker compose up -d` 一発で稼働する。
+処理本体はDockerコンテナ、スケジューリングはホストの systemd timer。
 
-| サービス | 中身 | 役割 |
+| 要素 | 中身 | 役割 |
 |---|---|---|
-| `sync` | 自作Python(FastAPI) | Garmin取得→突合せ→Strava更新。`POST /sync` / `GET /health` を公開 |
-| `n8n` | 公式image | 1時間ごとに `http://sync:8000/sync` を叩くスケジューラ |
+| `sync` コンテナ | 自作Python(FastAPI) | Garmin取得→突合せ→Strava更新。`POST /sync` / `GET /health` を `127.0.0.1:8787` に公開 |
+| systemd timer | ホスト | 1時間ごとに `curl -X POST http://127.0.0.1:8787/sync` を実行 |
 
-永続ボリューム: `garmin_token`（Garminログインキャッシュ）, `n8n_data`（ワークフロー）。
+- `/sync` は認証なしのため **localhost限定公開**。
+- 永続ボリューム: `garmin_token`（Garminログインキャッシュ）。
+- スケジューラに n8n を使う案も検討したが、純粋なcron用途にはオーバースペックなため
+  systemd timer に置き換えた（失敗通知が要れば `.service` の `OnFailure=` で対応）。
 
 ## 紐付けロジック（重要な設計判断）
 - **GarminとStravaは開始時刻(UTC)の一致で紐付ける。** Garmin→Strava自動連携なら
@@ -25,25 +28,28 @@ Garminのランアクティビティ（タイトル・詳細）の変更を検�
 - 認証情報は `.env` に集約（`STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` / `STRAVA_REFRESH_TOKEN`）。
 
 ## 主要ファイル
-- `src/sync.py` … コアロジック（Garmin取得・Strava API・突合せ・更新）。CLIエントリ `_main` も持つ
+- `src/sync.py` … コアロジック（Garmin取得・Strava API・突合せ・差分判定 `compute_payload`・更新）。CLIエントリ `_main` も持つ
 - `src/server.py` … FastAPIアプリ（`/sync`, `/health`）
 - `main.py` … ローカル検証用CLI（`src.sync._main` に委譲）
-- `Dockerfile` / `docker-compose.yml` … syncイメージとn8n+syncのcompose
-- `n8n/workflows/garmin-strava-sync.json` … 1時間ごとに/syncを叩くワークフロー
+- `tests/test_sync.py` … 突合せキー・差分判定のユニットテスト
+- `Dockerfile` / `docker-compose.yml` … syncイメージとcompose（sync単体）
+- `systemd/garmin-strava-sync.{service,timer}` … 1時間ごとに `/sync` を叩くスケジューラ
 
 ## 開発コマンド
 ```sh
 uv sync
 uv run python main.py --count 1 --dry-run   # 差分検出のみ（書き込まない）
 uv run python main.py --count 3             # 実際に同期
+uv run pytest -q                            # テスト
 ```
 Docker:
 ```sh
 docker compose up -d --build
+curl -X POST http://127.0.0.1:8787/sync     # 手動トリガ（systemdと同じ）
 ```
-デプロイ手順（トークンseed・ワークフローimport/activate）は README.md を参照。
+デプロイ手順（トークンseed・compose up・systemd timer設置）は README.md を参照。
 
 ## 状態と既知の制限
-ローカルで本番経路（n8n→sync→Strava更新）まで実動確認済み。ただし本番運用品質には未到達。
-未対応項目（種目フィルタ未実装・実サーバ未デプロイ・MFA耐久性・失敗通知なし 等）は
-README.md の「今後のTODO / 既知の制限」を参照。
+ローカルで本番経路（systemd相当のhost curl→sync→Strava更新）まで実動確認済み。
+ただし本番運用品質には未到達。未対応項目（種目フィルタ未実装・実サーバ未デプロイ・
+MFA耐久性・失敗通知なし 等）は README.md の「今後のTODO / 既知の制限」を参照。
