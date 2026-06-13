@@ -1,0 +1,32 @@
+services:
+  sync:
+    build: .
+    env_file: .env
+    environment:
+      GARMIN_TOKEN_DIR: /data/.garminconnect
+    volumes:
+      - garmin_token:/data
+    restart: unless-stopped
+    expose:
+      - "8000"
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      GENERIC_TIMEZONE: Asia/Tokyo
+      TZ: Asia/Tokyo
+      N8N_RUNNERS_ENABLED: "true"
+      # 同期ワークフローをUIにインポートしやすいようマウント
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows
+    restart: unless-stopped
+    depends_on:
+      - sync
+
+volumes:
+  garmin_token:
+  n8n_data:

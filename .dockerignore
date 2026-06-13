@@ -1,0 +1,9 @@
+.venv/
+.git/
+.env
+.garminconnect/
+shell/
+experiment.py
+__pycache__/
+*.pyc
+n8n/
