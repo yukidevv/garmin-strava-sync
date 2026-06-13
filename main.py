@@ -1,19 +1,10 @@
-from garminconnect import Garmin
-from dotenv import load_dotenv
-import os
-import json
+"""ローカル実行用のCLIエントリ。実体は src/sync.py。
 
-def main():
-  load_dotenv()
-  client = Garmin(
-    os.getenv("GARMIN_EMAIL"),
-    os.getenv("GARMIN_PASSWORD")
-  )
-
-  client.login(".garminconnect")
-
-  sleep = client.get_sleep_data("2026-05-30")
-  print(json.dumps(sleep["dailySleepDTO"], indent=2, ensure_ascii=False))
+例:
+  uv run python main.py --count 1 --dry-run
+  uv run python main.py --count 3
+"""
+from src.sync import _main
 
 if __name__ == "__main__":
-  main()
+    _main()
