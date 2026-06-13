@@ -1,0 +1,10 @@
+[Unit]
+Description=Trigger Garmin -> Strava sync (calls the sync container)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# syncコンテナの /sync をPOSTで叩く。-f でHTTPエラー時に終了コード非0
+# → systemdが失敗として記録（OnFailure=で通知をぶら下げられる）
+ExecStart=/usr/bin/curl -fsS -X POST http://127.0.0.1:8787/sync

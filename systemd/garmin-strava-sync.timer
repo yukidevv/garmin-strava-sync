@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Garmin -> Strava sync hourly
+
+[Timer]
+OnCalendar=hourly
+# サーバ停止中に逃した実行を起動時に補填する
+Persistent=true
+
+[Install]
+WantedBy=timers.target
