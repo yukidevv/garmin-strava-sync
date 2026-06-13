@@ -1,4 +1,4 @@
-"""n8nから叩かれる同期用HTTPサーバ。"""
+"""定期トリガ(ホストの systemd timer)から叩かれる同期用HTTPサーバ。"""
 from __future__ import annotations
 
 import logging
