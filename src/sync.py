@@ -191,7 +191,8 @@ def _main() -> None:
 
     load_dotenv()
     parser = argparse.ArgumentParser(description="Garmin → Strava sync")
-    parser.add_argument("--count", type=int, default=3)
+    # 既定値は環境変数 SYNC_ACTIVITY_COUNT（Docker/systemd運用と揃える）
+    parser.add_argument("--count", type=int, default=int(os.environ.get("SYNC_ACTIVITY_COUNT", "3")))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

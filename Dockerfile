@@ -12,6 +12,6 @@ RUN uv sync --frozen --no-dev
 COPY src ./src
 
 ENV GARMIN_TOKEN_DIR=/data/.garminconnect
-EXPOSE 8000
 
-CMD ["uv", "run", "--no-dev", "uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8000"]
+# 1回だけ同期して終了する単発ジョブ（常駐しない）。件数は SYNC_ACTIVITY_COUNT。
+CMD ["uv", "run", "--no-dev", "python", "-m", "src.sync"]
