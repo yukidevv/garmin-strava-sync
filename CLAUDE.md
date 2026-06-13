@@ -2,6 +2,10 @@
 
 Garminのランアクティビティ（タイトル・詳細）の変更を検知し、対応するStravaアクティビティへ反映する個人用ツール。Garminを正とする一方向同期。
 
+# ルール
+- 返答は日本語で行うこと
+- Conventional Commitsに従うこと (feat:, fix:, chore: など)
+
 ## 全体構成
 処理本体は**単発Dockerコンテナ**、スケジューリングはホストの systemd timer。
 
@@ -49,8 +53,3 @@ docker compose build
 docker compose run --rm sync                # 単発同期（systemdと同じ）
 ```
 デプロイ手順（トークンseed・compose build・systemd timer設置）は README.md を参照。
-
-## 状態と既知の制限
-ローカルで本番経路（`docker compose run --rm sync`→Strava更新）まで実動確認済み。
-ただし本番運用品質には未到達。未対応項目（種目フィルタ未実装・実サーバ未デプロイ・
-MFA耐久性・失敗通知なし 等）は README.md の「今後のTODO / 既知の制限」を参照。
