@@ -1,4 +1,6 @@
 services:
+  # 単発ジョブ。常駐せず、起動するたびに1回同期して終了する。
+  # スケジューリングはホストのsystemd timerが `docker compose run --rm sync` を毎時実行（systemd/ 参照）。
   sync:
     build: .
     env_file: .env
@@ -6,11 +8,6 @@ services:
       GARMIN_TOKEN_DIR: /data/.garminconnect
     volumes:
       - garmin_token:/data
-    restart: unless-stopped
-    # 認証なしの内部エンドポイントなのでホスト内(localhost)限定で公開。
-    # スケジューリングはホストのsystemd timerが /sync を叩く（systemd/ 参照）。
-    ports:
-      - "127.0.0.1:8787:8000"
 
 volumes:
   garmin_token:
