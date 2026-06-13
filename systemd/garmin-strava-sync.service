@@ -6,7 +6,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 # サーバ上のリポジトリ配置先に合わせて変更すること
-WorkingDirectory=/opt/garmin-strava-sync
+WorkingDirectory=/srv/docker/garmin-strava-sync
 # 単発コンテナを起動して同期し、終了後に破棄する（常駐しない）。
 # 失敗時はexitコード非0 → systemdが失敗記録（OnFailure=で通知をぶら下げ可）。
 ExecStart=/usr/bin/docker compose run --rm sync
