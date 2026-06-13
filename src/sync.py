@@ -51,6 +51,23 @@ def _parse_strava_date(value: str) -> datetime:
     return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
+def compute_payload(run: dict, strava_detail: dict) -> tuple[dict, list[str]]:
+    """Garminを正として、Stravaに送るべき更新内容と変更フィールドを返す。
+
+    純粋関数。外部I/Oを持たないのでここがテスト対象。
+    Garmin側が空の値ではStravaを上書きしない（消さない）。
+    """
+    payload: dict = {}
+    changes: list[str] = []
+    if run.get("name") and strava_detail.get("name") != run["name"]:
+        payload["name"] = run["name"]
+        changes.append("name")
+    if run.get("description") and (strava_detail.get("description") or "") != run["description"]:
+        payload["description"] = run["description"]
+        changes.append("description")
+    return payload, changes
+
+
 # --- Garmin ------------------------------------------------------------------
 
 def fetch_garmin_runs(count: int, token_dir: str) -> list[dict]:
@@ -144,14 +161,8 @@ def sync(count: int = 3, token_dir: str | None = None, dry_run: bool = False) ->
         res.strava_id = match["id"]
         try:
             detail = fetch_strava_detail(token, match["id"])
-            payload: dict = {}
-            if run["name"] and detail.get("name") != run["name"]:
-                payload["name"] = run["name"]
-                res.changes.append("name")
-            # Garmin側が空の詳細でStravaを消さない（Garminを正とするが空は無視）
-            if run["description"] and (detail.get("description") or "") != run["description"]:
-                payload["description"] = run["description"]
-                res.changes.append("description")
+            payload, changes = compute_payload(run, detail)
+            res.changes = changes
 
             if not payload:
                 res.status = "unchanged"
