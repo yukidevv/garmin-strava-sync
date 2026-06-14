@@ -51,6 +51,18 @@ def _parse_strava_date(value: str) -> datetime:
     return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
+def is_running_type(type_key: str | None) -> bool:
+    """Garminの activityType.typeKey がラン系か判定する純粋関数。
+
+    running 単体だけでなく trail_running / treadmill_running / virtual_run /
+    ultra_run 等も拾う。Garminのラン系 typeKey はいずれも "run" を含み、
+    バイク/スイム/ウォーク等は含まないため部分一致で判定する。
+    """
+    if not type_key:
+        return False
+    return "run" in type_key.lower()
+
+
 def compute_payload(run: dict, strava_detail: dict) -> tuple[dict, list[str]]:
     """Garminを正として、Stravaに送るべき更新内容と変更フィールドを返す。
 
@@ -77,11 +89,15 @@ def fetch_garmin_runs(count: int, token_dir: str) -> list[dict]:
     activities = client.get_activities(0, count)
     runs = []
     for a in activities:
+        type_key = (a.get("activityType") or {}).get("typeKey")
+        if not is_running_type(type_key):
+            # バイク/スイム/ウォーク等は同期対象外（直近N件のうちラン系のみ残す）
+            continue
         runs.append({
             "activityId": a.get("activityId"),
             "name": a.get("activityName") or "",
             "description": a.get("description") or "",
-            "type": (a.get("activityType") or {}).get("typeKey"),
+            "type": type_key,
             "startGMT": a.get("startTimeGMT"),
         })
     return runs

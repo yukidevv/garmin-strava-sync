@@ -2,7 +2,14 @@
 
 Garmin/Strava への通信は伴わない。データを書き換える判定部分を守るのが目的。
 """
-from src.sync import _parse_garmin_gmt, _parse_strava_date, compute_payload
+import pytest
+
+from src.sync import (
+    _parse_garmin_gmt,
+    _parse_strava_date,
+    compute_payload,
+    is_running_type,
+)
 
 
 # --- 突合せキー（開始時刻） ---------------------------------------------------
@@ -18,6 +25,37 @@ def test_different_seconds_do_not_match():
     g = _parse_garmin_gmt("2026-06-12 22:00:55")
     s = _parse_strava_date("2026-06-12T22:00:56Z")
     assert g != s
+
+
+# --- 種目判定（is_running_type） ---------------------------------------------
+
+@pytest.mark.parametrize("type_key", [
+    "running",
+    "trail_running",
+    "treadmill_running",
+    "indoor_running",
+    "track_running",
+    "virtual_run",
+    "ultra_run",
+])
+def test_running_types_are_kept(type_key):
+    assert is_running_type(type_key) is True
+
+
+@pytest.mark.parametrize("type_key", [
+    "cycling",
+    "road_biking",
+    "mountain_biking",
+    "lap_swimming",
+    "open_water_swimming",
+    "walking",
+    "hiking",
+    "strength_training",
+    None,
+    "",
+])
+def test_non_running_types_are_excluded(type_key):
+    assert is_running_type(type_key) is False
 
 
 # --- 差分判定（compute_payload） ---------------------------------------------
