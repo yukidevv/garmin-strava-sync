@@ -1,5 +1,6 @@
 [Unit]
 Description=Run Garmin -> Strava sync (one-shot container)
+OnFailure=failure-notification@%n.service
 After=docker.service
 Requires=docker.service
 
